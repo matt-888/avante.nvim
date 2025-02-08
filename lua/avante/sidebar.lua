@@ -397,8 +397,8 @@ local function get_searching_hint()
 end
 
 local thinking_spinner_chars = {
-  "🤯",
-  "🙄",
+  "*",
+  "-",
 }
 local thinking_spinner_index = 1
 
@@ -438,7 +438,7 @@ local function generate_display_content(replacement)
       end)
       :totable()
     local result_lines =
-      vim.list_extend(vim.list_slice(lines, 1, replacement.last_search_tag_start_line), { "🤔 Thought content:" })
+      vim.list_extend(vim.list_slice(lines, 1, replacement.last_search_tag_start_line), { "Thought content:" })
     result_lines = vim.list_extend(result_lines, formatted_thinking_content_lines)
     result_lines = vim.list_extend(result_lines, vim.list_slice(lines, last_think_tag_end_line + 1))
     return table.concat(result_lines, "\n")
@@ -861,7 +861,7 @@ function Sidebar:render_result()
   then
     return
   end
-  local header_text = "󰭻 Avante"
+  local header_text = "Avante"
   self:render_header(
     self.result_container.winid,
     self.result_container.bufnr,
@@ -883,13 +883,13 @@ function Sidebar:render_input(ask)
   end
 
   local header_text = string.format(
-    "󱜸 %s (" .. Config.mappings.sidebar.switch_windows .. ": switch focus)",
+    "%s (" .. Config.mappings.sidebar.switch_windows .. ": switch focus)",
     ask and "Ask" or "Chat with"
   )
 
   if self.code.selection ~= nil then
     header_text = string.format(
-      "󱜸 %s (%d:%d) (<Tab>: switch focus)",
+      "%s (%d:%d) (<Tab>: switch focus)",
       ask and "Ask" or "Chat with",
       self.code.selection.range.start.lnum,
       self.code.selection.range.finish.lnum
