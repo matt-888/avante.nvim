@@ -471,8 +471,10 @@ Given its early stage, `avante.nvim` currently supports the following basic func
 > For Amazon Bedrock:
 >
 > ```sh
-> export BEDROCK_KEYS=aws_access_key_id,aws_secret_access_key,aws_region
+> export BEDROCK_KEYS=aws_access_key_id,aws_secret_access_key,aws_region[,aws_session_token]
+>
 > ```
+> Note: The aws_session_token is optional and only needed when using temporary AWS credentials
 
 1. Open a code file in Neovim.
 2. Use the `:AvanteAsk` command to query the AI about the code.
@@ -548,15 +550,16 @@ For more information, see [Custom Providers](https://github.com/yetone/avante.nv
 
 ## Web Search Engines
 
-Avante's tools include some web search engines, currently support [tavily](https://tavily.com/) and [serpapi](https://serpapi.com/). The default is tavily, and can be changed through configuring `Config.web_search_engine.provider`:
+Avante's tools include some web search engines, currently support [tavily](https://tavily.com/), [serpapi](https://serpapi.com/) and google's [programmable search engine](https://developers.google.com/custom-search/v1/overview). The default is tavily, and can be changed through configuring `Config.web_search_engine.provider`:
 
 ```lua
 web_search_engine = {
-  provider = "tavily", -- tavily or serpapi
+  provider = "tavily", -- tavily, serpapi or google
 }
 ```
 
-You need to set the environment variable `TAVILY_API_KEY` or `SERPAPI_API_KEY` to use tavily or serpapi.
+You need to set the environment variable `TAVILY_API_KEY` , `SERPAPI_API_KEY` to use tavily or serpapi.
+To use google, set the `GOOGLE_SEARCH_API_KEY` as the [API key](https://developers.google.com/custom-search/v1/overview), and `GOOGLE_SEARCH_ENGINE_ID` as the [search engine](https://programmablesearchengine.google.com) ID.
 
 ## Disable Tools
 

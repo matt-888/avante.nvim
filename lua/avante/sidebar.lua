@@ -225,10 +225,16 @@ local function transform_result_content(selected_files, result_content, prev_fil
       if next_line and next_line:match("^%s*```%w+$") then i = i + 1 end
       search_start = i + 1
       last_search_tag_start_line = i
-    elseif line_content == "</SEARCH>" then
+    elseif line_content:match("</SEARCH>") then
       is_searching = false
 
       local search_end = i
+
+      -- Handle case where </SEARCH> is a suffix
+      if not line_content:match("^%s*</SEARCH>%s*$") then
+        local search_end_line = line_content:match("^(.+)</SEARCH>")
+        result_lines[i] = search_end_line
+      end
 
       local prev_line = result_lines[i - 1]
       if prev_line and prev_line:match("^%s*```$") then search_end = i - 1 end
@@ -248,24 +254,28 @@ local function transform_result_content(selected_files, result_content, prev_fil
 
       if not the_matched_file then
         if not PPath:new(filepath):exists() then
-          Utils.warn("File not found: " .. filepath)
-          goto continue
+          the_matched_file = {
+            filepath = filepath,
+            content = "",
+            file_type = nil,
+          }
+        else
+          if not PPath:new(filepath):is_file() then
+            Utils.warn("Not a file: " .. filepath)
+            goto continue
+          end
+          local lines = Utils.read_file_from_buf_or_disk(filepath)
+          if lines == nil then
+            Utils.warn("Failed to read file: " .. filepath)
+            goto continue
+          end
+          local content = table.concat(lines, "\n")
+          the_matched_file = {
+            filepath = filepath,
+            content = content,
+            file_type = nil,
+          }
         end
-        if not PPath:new(filepath):is_file() then
-          Utils.warn("Not a file: " .. filepath)
-          goto continue
-        end
-        local lines = Utils.read_file_from_buf_or_disk(filepath)
-        if lines == nil then
-          Utils.warn("Failed to read file: " .. filepath)
-          goto continue
-        end
-        local content = table.concat(lines, "\n")
-        the_matched_file = {
-          filepath = filepath,
-          content = content,
-          file_type = nil,
-        }
       end
 
       local file_content = vim.split(the_matched_file.content, "\n")
@@ -317,8 +327,13 @@ local function transform_result_content(selected_files, result_content, prev_fil
       if next_line and next_line:match("^%s*```%w+$") then i = i + 1 end
       last_replace_tag_start_line = i
       goto continue
-    elseif line_content == "</REPLACE>" then
+    elseif line_content:match("</REPLACE>") then
       is_replacing = false
+      -- Handle case where </REPLACE> is a suffix
+      if not line_content:match("^%s*</REPLACE>%s*$") then
+        local replace_end_line = line_content:match("^(.+)</REPLACE>")
+        if replace_end_line and replace_end_line ~= "" then table.insert(transformed_lines, replace_end_line) end
+      end
       local prev_line = result_lines[i - 1]
       if not (prev_line and prev_line:match("^%s*```$")) then table.insert(transformed_lines, "```") end
       goto continue
@@ -597,10 +612,6 @@ local function insert_conflict_contents(bufnr, snippets)
       end_line = end_line + 1
     end
 
-    local need_prepend_indentation = false
-    local start_line_indentation = ""
-    local original_start_line_indentation = Utils.get_indentation(lines[start_line] or "")
-
     local result = {}
     table.insert(result, "<<<<<<< HEAD")
     for i = start_line, end_line do
@@ -610,19 +621,7 @@ local function insert_conflict_contents(bufnr, snippets)
 
     local snippet_lines = vim.split(snippet.content, "\n")
 
-    for idx, line in ipairs(snippet_lines) do
-      if idx == 1 then
-        start_line_indentation = Utils.get_indentation(line)
-        need_prepend_indentation = start_line_indentation ~= original_start_line_indentation
-      end
-      if need_prepend_indentation then
-        if line:sub(1, #start_line_indentation) == start_line_indentation then
-          line = line:sub(#start_line_indentation + 1)
-        end
-        line = original_start_line_indentation .. line
-      end
-      table.insert(result, line)
-    end
+    vim.list_extend(result, snippet_lines)
 
     table.insert(result, ">>>>>>> Snippet")
 
